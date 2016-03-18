@@ -1,6 +1,7 @@
 package adapter;
 
 import java.io.BufferedReader;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -62,4 +63,26 @@ public class WYIO {
 		}
 
 	}
+	public  static int readVecDiem(String wordVecFile,String seperater,int lineNum) throws IOException
+	{
+		BufferedReader reader=FileTool.getBufferedReaderFromFile(wordVecFile);
+		String line="";
+		int count=0;
+		while((line=reader.readLine())!=null)
+		{
+			++count;
+			if(lineNum==count)
+			{
+				break;
+			}
+		}
+		String[] elms=line.split(seperater);
+		System.out.println(lineNum+" line vec diem is "+(elms.length-1));
+		return elms.length-1;
+	}
+	public static int readVecDiem(String wordVecFile,String seperater) throws IOException
+	{
+		return readVecDiem(wordVecFile,seperater,2);
+	
+ 	}
 }

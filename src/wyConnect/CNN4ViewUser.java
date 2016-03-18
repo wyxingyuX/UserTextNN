@@ -15,7 +15,6 @@ import adapter.TestTool;
 import adapter.ToolKit;
 import adapter.WYIO;
 import model.DocAverage;
-import model.MynnForCL4;
 import nnet.AverageLayer;
 import nnet.LinearLayer;
 import nnet.LookupLayer;
@@ -147,8 +146,8 @@ public class CNN4ViewUser extends Net4ViewUser{
 	}
 	
 	public int[][] getWordIdMatrix(int idxData,String type){
-		String sentenceSplit="。{1,}|！{1,}|？{1,}|\\n";
-		//String sentenceSplit="\\n";
+		//String sentenceSplit="。{1,}|！{1,}|？{1,}|\\n";
+		String sentenceSplit="\\n";
 		Data data = null;
 		if(type.equals("train")){
 			data= this.trainDataList.get(idxData);

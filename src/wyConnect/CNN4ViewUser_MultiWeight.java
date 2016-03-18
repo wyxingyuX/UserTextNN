@@ -15,20 +15,20 @@ import nnet.NNInterface;
 import other.Data;
 import other.Funcs;
 
-public class CNN4ViewUser1 extends Net4ViewUser{
+public class CNN4ViewUser_MultiWeight extends Net4ViewUser{
 
 	public List<LookupLinearTanh> xseedLLTxList;
 
 	////////////////
 	public View view;
 	
-	public LinearLayer viewLinerLayer;
+	public LinearLayer viewMultiWeightLinerLayer;
     
-	public CNN4ViewUser1(View view,List<Integer> windowSizeLookupList,int outputLengthWordLookup) throws Exception{
+	public CNN4ViewUser_MultiWeight(View view,List<Integer> windowSizeLookupList,int outputLengthWordLookup) throws Exception{
 		this(view.embeddingFileWord,view.embeddingLengthWord,windowSizeLookupList,outputLengthWordLookup,view.trainIds,view.validationIds,view.testIds,view.allDatas);
 		this.view=view;
 	}
-	public CNN4ViewUser1(
+	public CNN4ViewUser_MultiWeight(
 			String embeddingFileWord,
 			int embeddingLengthWord,
 			List<Integer> windowSizeLookupList,
@@ -51,7 +51,7 @@ public class CNN4ViewUser1 extends Net4ViewUser{
 				allReviews
 				);
 	}
-	public CNN4ViewUser1(
+	public CNN4ViewUser_MultiWeight(
 			String embeddingFileWord,
 			int embeddingLengthWord,
 			List<Integer> windowSizeLookupList,
@@ -113,13 +113,12 @@ public class CNN4ViewUser1 extends Net4ViewUser{
 		mutConInputLengths[i]=viewLookup.output.length;
 		
 		connect = new MultiConnectLayer(mutConInputLengths);
+	 
+		average = new AverageLayer(connect.outputLength, averageOutputLength);
+		connect.link(average);
 		
-		viewLinerLayer=new LinearLayer(connect.outputLength,connect.outputLength/2);
-		connect.link(viewLinerLayer);
-        
-		average = new AverageLayer(viewLinerLayer.outputLength, averageOutputLength);
-		viewLinerLayer.link(average);
-		
+		viewMultiWeightLinerLayer=new LinearLayer(average.outputLength,average.outputLength);
+		average.link(viewMultiWeightLinerLayer);
 		
 		this.loadData(trainIds,validationIds, testIds, allReviews);
 	}
@@ -129,7 +128,7 @@ public class CNN4ViewUser1 extends Net4ViewUser{
 			llt.randomize(r, min, max);
 		}
 		viewLookup.randomize(r, min, max);
-		viewLinerLayer.randomize(r, min, max);
+		viewMultiWeightLinerLayer.randomize(r, min, max);
 	}
 
 	public List<NNInterface> getDocAverageList(int[][]  wordIdMatrix) throws Exception{
@@ -155,6 +154,9 @@ public class CNN4ViewUser1 extends Net4ViewUser{
 		}
 		if(type.equals("test")){
 			data= this.testDataList.get(idxData);
+		}
+		if(type.equals("validation")){
+			data=this.validationDataList.get(idxData);
 		}
 		
 		String[] sentences = data.reviewText.split(sentenceSplit);

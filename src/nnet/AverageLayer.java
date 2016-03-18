@@ -5,56 +5,56 @@ import java.util.Random;
 public class AverageLayer implements NNInterface{
 
 	public int inputLength;
-    public int outputLength;
+	public int outputLength;
 
-    public double[] input;
-    public double[] inputG;
-    
-    public double[] output;
-    public double[] outputG;
+	public double[] input;
+	public double[] inputG;
 
-    public int linkId;
-	
-    public AverageLayer()
-    {
-    }
-    public AverageLayer(int xOutputLength)
-    {
-    	initOutput(xOutputLength);
-    	linkId =0;
-    }
-    public AverageLayer(int xInputLength, int xOutputLength)
-    {
-    	this(xInputLength, xOutputLength, 0);
-    }
-    
-    public AverageLayer(int xInputLength, int xOutputLength, int xLinkId)
-    {
-    	inputLength = xInputLength;
-    	outputLength = xOutputLength;
+	public double[] output;
+	public double[] outputG;
+
+	public int linkId;
+
+	public AverageLayer()
+	{
+	}
+	public AverageLayer(int xOutputLength)
+	{
+		initOutput(xOutputLength);
+		linkId =0;
+	}
+	public AverageLayer(int xInputLength, int xOutputLength)
+	{
+		this(xInputLength, xOutputLength, 0);
+	}
+
+	public AverageLayer(int xInputLength, int xOutputLength, int xLinkId)
+	{
+		inputLength = xInputLength;
+		outputLength = xOutputLength;
 		linkId = xLinkId;
 		input = new double[inputLength];
 		inputG = new double[inputLength];
 		output = new double[outputLength];
 		outputG = new double[outputLength];
-    }
-    
-    public void initOutput(int xOutputLength){
-    	outputLength = xOutputLength;
+	}
+
+	public void initOutput(int xOutputLength){
+		outputLength = xOutputLength;
 		output = new double[outputLength];
 		outputG = new double[outputLength];
-    }
-    public void initInput(int xInputLength){
-    	inputLength = xInputLength;
+	}
+	public void initInput(int xInputLength){
+		inputLength = xInputLength;
 		input = new double[inputLength];
 		inputG = new double[inputLength];
 
-    }
-    
+	}
+
 	@Override
 	public void randomize(Random r, double min, double max) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -64,7 +64,7 @@ public class AverageLayer implements NNInterface{
 		{
 			output[i] = 0;
 		}
-		
+
 		int K = inputLength / outputLength;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
 		for(int j = 0; j < K; j++)
 		{
@@ -73,10 +73,33 @@ public class AverageLayer implements NNInterface{
 				output[i] += input[j * outputLength + i];
 			}
 		}
-		
+
 		for(int i = 0; i < outputLength; i++)
 		{
 			output[i] = output[i] / K;
+		}
+	}
+
+	//wy
+	public void forward(double weight) {
+		// TODO Auto-generated method stub
+		for(int i = 0; i < outputLength; i++)
+		{
+			output[i] = 0;
+		}
+
+		int K = inputLength / outputLength;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+		for(int j = 0; j < K; j++)
+		{
+			for(int i = 0; i < outputLength; i++)
+			{
+				output[i] += input[j * outputLength + i];
+			}
+		}
+
+		for(int i = 0; i < outputLength; i++)
+		{
+			output[i] = (output[i]*weight) / K;
 		}
 	}
 
@@ -96,13 +119,13 @@ public class AverageLayer implements NNInterface{
 	@Override
 	public void update(double learningRate) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void updateAdaGrad(double learningRate, int batchsize) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -112,7 +135,7 @@ public class AverageLayer implements NNInterface{
 		{
 			outputG[i] = 0;
 		}
-		
+
 		for(int i = 0; i < inputG.length; i++)
 		{
 			inputG[i] = 0;
@@ -124,10 +147,10 @@ public class AverageLayer implements NNInterface{
 		// TODO Auto-generated method stub
 		Object nextInputG = nextLayer.getInputG(id);
 		Object nextInput = nextLayer.getInput(id);
-		
+
 		double[] nextI = (double[])nextInput;
 		double[] nextIG = (double[])nextInputG; 
-		
+
 		if(nextI.length != output.length || nextIG.length != outputG.length)
 		{
 			throw new Exception("The Lengths of linked layers do not match.");
@@ -181,7 +204,7 @@ public class AverageLayer implements NNInterface{
 	@Override
 	public void update(double learningRate, int batchsize) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

@@ -147,4 +147,10 @@ public class TanhLinear implements NNInterface {
 		return true;
 	}
 
+	@Override
+	public void update(double learningRate, int batchsize) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

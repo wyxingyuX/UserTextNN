@@ -33,7 +33,8 @@ public class TanhLayer implements NNInterface{
 		// TODO Auto-generated method stub
 		
 	}
-
+    
+	//wy: why tanh no weight?
 	@Override
 	public void forward() {
 		// TODO Auto-generated method stub

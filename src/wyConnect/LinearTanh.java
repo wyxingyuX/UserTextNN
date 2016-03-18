@@ -153,5 +153,10 @@ public class LinearTanh implements NNInterface {
 		// TODO Auto-generated method stub
 		return true;
 	}
+	@Override
+	public void update(double learningRate, int batchsize) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

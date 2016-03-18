@@ -151,6 +151,8 @@ public class LookupLinearTanh implements NNInterface{
 	@Override
 	public void update(double learningRate) {
 		linear.update(learningRate);
+		
+		//this.lookup.update(learningRate);	//wy
 	}
 	
 	//wy
