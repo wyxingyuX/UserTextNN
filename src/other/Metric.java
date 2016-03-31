@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import adapter.TestTool;
+import wyConnect.MetricResult;
 
 public class Metric {
 
-	public static double calcMetric(List<Integer> goldLabelList, List<Integer> predictLabelList)
+	public static MetricResult calcMetric(List<Integer> goldLabelList, List<Integer> predictLabelList)
 	{
 		if(goldLabelList.size() != predictLabelList.size())
 		{
@@ -59,8 +60,9 @@ public class Metric {
 		}
 		
 		double accuracy = 1.0 * totalMatch / totalGold;
+		double macro_f=macroF/classMap.size();
 		TestTool.println("Accuracy: " + accuracy);
-		TestTool.println("macro-F: "+ macroF/classMap.size());
+		TestTool.println("macro-F: "+ macro_f);
 		
 		// mae = 1/N * (|gold_i - predict_i|)
 		// rmse = sqrt(1/N * (gold_i - predict_i) * (gold_i - predict_i))
@@ -81,7 +83,9 @@ public class Metric {
 		
 		TestTool.println("MAE: " + mae);
 		TestTool.println("RMSE: " + rmse);
-		return accuracy;
+		
+		MetricResult metricResult=new MetricResult(accuracy,macro_f,mae,rmse);
+		return metricResult;
 	}
 	
 	public static void calcMetric(String goldFile, String predictFile)

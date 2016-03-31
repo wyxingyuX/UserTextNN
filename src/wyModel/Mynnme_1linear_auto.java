@@ -2,6 +2,7 @@ package wyModel;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +27,9 @@ import other.Data;
 import other.Metric;
 import wyConnect.CNNME4ViewUser;
 import wyConnect.LinearTanh;
+import wyConnect.MetricResult;
 import wyConnect.Net4ViewUser;
+import wyConnect.PredictData;
 import wyConnect.PredictResult;
 import wyConnect.ResultBean;
 import wyConnect.View;
@@ -149,9 +152,17 @@ public class Mynnme_1linear_auto {
 
 		int lastRound=-1;
 
-		List<Double> accsTest=new ArrayList<Double>();
-		List<Double> accsValidation=new ArrayList<Double>();
-		List<Double> meanErrorsValidation=new ArrayList<Double>();
+		int maxTestAccRound=-1;
+		PredictResult maxTestAcc=new PredictResult();
+
+		PredictResult prstTestByMeanErrorVal=null;
+		PredictResult prstTestByAccVal=null;
+
+		int minMeanErrorValRound=-1;
+		PredictResult minMeanErrorVal=new PredictResult();
+		int maxAccValRound=-1;
+		PredictResult maxAccVal=new PredictResult();
+
 
 		for(int round = 1; round <= roundNum; round++)
 		{
@@ -250,49 +261,49 @@ public class Mynnme_1linear_auto {
 			System.out.println("============= finish training round: " + round + " ==============");
 
 			PredictResult testResult=predict(round,Net4ViewUser.TEST);
-			double accTest=testResult.acc;
-			accsTest.add(accTest);
+
+			if(testResult.acc>maxTestAcc.acc)
+			{
+				maxTestAcc=testResult;
+				maxTestAccRound=round;
+			}
 
 			PredictResult validationResult=predict(round,Net4ViewUser.VALIDATION);
-			accsValidation.add(validationResult.acc);
-			meanErrorsValidation.add(validationResult.meanError);
+			if(validationResult.acc>maxAccVal.acc)
+			{
+				maxAccVal=validationResult;
+				prstTestByAccVal=testResult;
+				maxAccValRound=round;
+			}
+			if(validationResult.meanError<minMeanErrorVal.meanError)
+			{
+				minMeanErrorVal=validationResult;
+				prstTestByMeanErrorVal=testResult;
+				minMeanErrorValRound=round;
+			}
 		}
-
-		Map.Entry<Integer,Double> maxValueMap=ToolKit.getMaxValue(accsValidation);
 		TestTool.println("=============total "+roundNum+" epochs"+" =====================");
-		TestTool.println("MaxValidationAcc="+maxValueMap.getValue());
-		TestTool.println("MaxValidationAccRound="+(maxValueMap.getKey()+1));
-		TestTool.println("TestAcc="+accsTest.get(maxValueMap.getKey()));
+		TestTool.println("MaxValidationAcc="+maxAccVal.acc);
+		TestTool.println("MaxValidationAccRound="+maxAccValRound);
+		TestTool.println("TestAcc="+prstTestByAccVal.acc);
+		TestTool.println("TestMacroF="+prstTestByAccVal.macroF);
 
 		TestTool.println("==========================");
-		Map.Entry<Integer,Double> minValueMap=ToolKit.getMinValue(meanErrorsValidation);
-		TestTool.println("MinValidationError="+minValueMap.getValue());
-		TestTool.println("MinValidationErrorRound="+(minValueMap.getKey()+1));
-		TestTool.println("TestAcc="+accsTest.get(minValueMap.getKey()));
+		TestTool.println("MinValidationError="+minMeanErrorVal.meanError);
+		TestTool.println("MinValidationErrorRound="+minMeanErrorValRound);
+		TestTool.println("TestAcc="+prstTestByMeanErrorVal.acc);
+		TestTool.println("TestMacroF="+prstTestByMeanErrorVal.macroF);
 
 		TestTool.println("==========================");
-		Map.Entry<Integer,Double> maxTestValueMap=ToolKit.getMaxValue(accsTest);
-		TestTool.println("MaxTestAcc="+maxTestValueMap.getValue());
-		TestTool.println("MaxTestAccRound="+(maxTestValueMap.getKey()+1));
+		TestTool.println("MaxTestAcc="+maxTestAcc.acc);
+		TestTool.println("TestMacroF="+maxTestAcc.macroF);
+		TestTool.println("MaxTestAccRound="+maxTestAccRound);
 
-		//姹傞獙璇侀泦涓婄殑鏋佸皬鐐�
-		//		List<Double> delatMeanErrorVallidation=new ArrayList<Double>();
-		//		for(int i=1;i<meanErrorsValidation.size();++i){
-		//			delatMeanErrorVallidation.add(meanErrorsValidation.get(i)-meanErrorsValidation.get(i-1));
-		//		}
-		//		TestTool.println("==========================");
-		//		Map.Entry<Integer,Double> deltaMeanErrorMap=ToolKit.getMinimalPoint(delatMeanErrorVallidation, 0.01);
-		//		TestTool.println("MaxTestAcc="+maxTestValueMap.getValue());
-		//		TestTool.println("MaxTestAccRound="+(maxTestValueMap.getKey()+1));
 		TestTool.println("========================================================== finnish in "+new Date()+"============================================================");
 		ResultBean roundResult=new ResultBean();
-
-		roundResult.acc_MaxAccValidation=accsTest.get(maxValueMap.getKey());
-		roundResult.MaxAccValidationRound=maxValueMap.getKey()+1;
-		roundResult.acc_minErrorValidation=accsTest.get(minValueMap.getKey());
-		roundResult.minErrorValidationRound=minValueMap.getKey()+1;
-		roundResult.acc_max=maxTestValueMap.getValue();
-		roundResult.maxAccRound=maxTestValueMap.getKey()+1;
+		roundResult.setPreTestByAccVal(prstTestByAccVal, maxAccValRound);
+		roundResult.setPreTestByMeanErrorVal(prstTestByMeanErrorVal, minMeanErrorValRound);
+		roundResult.setMaxAccTest(maxTestAcc, maxTestAccRound);
 		return roundResult;
 	}
 
@@ -316,6 +327,7 @@ public class Mynnme_1linear_auto {
 
 		double lossV=0;
 		int lossC=0;
+		PredictResult result=new PredictResult();
 		for(int idxData = 0; idxData < oneViewDataList.size(); idxData++)
 		{
 			Map<CNNME4ViewUser,List<NNInterface>> viewUserDocAverageListMap=new LinkedHashMap<CNNME4ViewUser,List<NNInterface>>();
@@ -342,7 +354,7 @@ public class Mynnme_1linear_auto {
 				continue;
 			}
 
-			//userLookup.input[0] = userVocab.get(data.userStr);
+
 			fusionLookup.input[0] =0;
 
 			// important
@@ -354,10 +366,13 @@ public class Mynnme_1linear_auto {
 			linearForSoftmax.forward();
 			softmax.forward();
 
+			PredictData predictdata=new PredictData();
+			List<Double> probs=new ArrayList<Double>();
 			int predClass = -1;
 			double maxPredProb = -1.0;
 			for(int ii = 0; ii < softmax.length; ii++)
 			{
+				probs.add(softmax.output[ii]);
 				if(softmax.output[ii] > maxPredProb)
 				{
 					maxPredProb = softmax.output[ii];
@@ -368,15 +383,23 @@ public class Mynnme_1linear_auto {
 			Data data=oneViewDataList.get(idxData);
 			goldList.add(data.goldRating);
 
+			data.predictedRating=predClass + 1;
+			predictdata.setCateProbls(probs);
+			predictdata.data=data;
+
+			result.add(predictdata);
 			// set cross-entropy error 
 			// we minus 1 because the saved goldRating is in range 1~5, while what we need is in range 0~4
 			int goldRating = data.goldRating - 1;
 			lossV += -Math.log(softmax.output[goldRating]);
 			lossC += 1;
 		}
-		double acc=Metric.calcMetric(goldList, predList);
+		MetricResult metricResult=Metric.calcMetric(goldList, predList);
 		double meanError=lossV/lossC*1.0 ;
-		PredictResult result=new PredictResult(acc,meanError);
+		result.acc=metricResult.acc;
+		result.macroF=metricResult.macroF;
+		result.meanError=meanError;
+
 		TestTool.println("lossV/lossC = " + lossV + "/" + lossC + "\t"+ " = " + meanError);
 		TestTool.println(type+":============== finish predicting =================\r\n");
 		return result;
@@ -524,18 +547,22 @@ public class Mynnme_1linear_auto {
 			TestTool.println("Start...");
 			//setLogPath
 			destName="";
+			String netType="";
+			String concateStr="_";
 			if(views.size()==1){
-				destName=views.get(0).viewName;
+				destName=views.get(0).viewName+concateStr+getNetType(views.get(0).netType);
 			}
 			if(views.size()>1){
 				for(int i=0;i<views.size();++i){
 					if(i<views.size()-1)
-						destName+=views.get(i).viewName+"+";
+						destName+=views.get(i).viewName+concateStr+getNetType(views.get(i).netType)+"+";
 					else
-						destName+=views.get(i).viewName;
+						destName+=views.get(i).viewName+concateStr+getNetType(views.get(i).netType);
 				}
 			}
-			GlobleLog.setLogDir(FileTool.backReplaceDirNode(destBase+"5fold\\"+fold+"\\", "5fold", destName));
+			String logDir=FileTool.backReplaceDirNode(destBase+"5fold\\"+fold+"\\", "5fold", destName);
+			GlobleLog.setLogDir(logDir);
+
 			Mynnme_1linear_auto main = new Mynnme_1linear_auto(
 					views,
 					windowSizeWordLookupList,
@@ -543,6 +570,7 @@ public class Mynnme_1linear_auto {
 					embeddingLengthItemLookup,
 					classNum, 
 					randomizeBase);
+
 			ResultBean result=main.run(roundNum, 
 					probThreshold, 
 					learningRate, 
@@ -550,14 +578,30 @@ public class Mynnme_1linear_auto {
 					"");
 			results.add(result);
 			TestTool.println("End");
+			
+			//write tesing_id and result_cnn for each fold exp
+			WYIO.writePredictResult(logDir,result.preTest_accVal,"accVal");
+			WYIO.writePredictResult(logDir,result.preTest_meanErrorVal,"mErrorVal");
 		}
+
 		double avgAcc_maxAccValidation=0;
+		double avgMacroF_maxAccVal=0;
+
 		double avgAcc_minErrorValidation=0;
+		double avgMacroF_minErrorVal=0;
+
 		double avgAccmax=0;
+		double avgMacroF_maxTestAcc=0;
 		for(ResultBean result:results){
-			avgAcc_maxAccValidation+=result.acc_MaxAccValidation;
-			avgAcc_minErrorValidation+=result.acc_minErrorValidation;
-			avgAccmax+=result.acc_max;
+			avgAcc_maxAccValidation+=result.preTest_accVal.acc;
+			avgMacroF_maxAccVal+=result.preTest_accVal.macroF;
+
+			avgAcc_minErrorValidation+=result.preTest_meanErrorVal.acc;
+			avgMacroF_minErrorVal+=result.preTest_meanErrorVal.macroF;
+
+			avgAccmax+=result.maxAccTest.acc;
+			avgMacroF_maxTestAcc+=result.maxAccTest.macroF;
+
 		}
 		avgAcc_maxAccValidation/=results.size();
 		avgAcc_minErrorValidation/=results.size();
@@ -567,29 +611,51 @@ public class Mynnme_1linear_auto {
 
 		TestTool.println("======Acc Max===========");
 		for(int f=0;f<totalFold;++f){
-			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).acc_max+" round="+results.get(f).maxAccRound);
+			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).maxAccTest.acc+" macroF="+results.get(f).maxAccTest.macroF
+					+ " round="+results.get(f).maxAccRound);
 		}
 		TestTool.println(totalFold+" fold avg acc="+avgAccmax+"\r\n");
 
 
 		TestTool.println("======Acc stop by maxAccValidation===========");
 		for(int f=0;f<totalFold;++f){
-			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).acc_MaxAccValidation+" round="+results.get(f).MaxAccValidationRound);
+			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).preTest_accVal.acc+" macroF="+results.get(f).preTest_accVal.macroF
+					+" round="+results.get(f).MaxAccValidationRound);
 		}
 		TestTool.println(totalFold+" fold avg acc="+avgAcc_maxAccValidation+"\r\n");
 
 
 		TestTool.println("======Acc stop by minErrorValidation===========");
 		for(int f=0;f<totalFold;++f){
-			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).acc_minErrorValidation+" round="+results.get(f).minErrorValidationRound);
+			TestTool.println("fold "+f+" "+destName+" acc="+results.get(f).preTest_meanErrorVal.acc+" macroF="+results.get(f).preTest_meanErrorVal.macroF
+					+" round="+results.get(f).minErrorValidationRound);
 		}
 		TestTool.println(totalFold+" fold avg acc="+avgAcc_minErrorValidation+"\r\n");
 	}
+	public static String getNetType(int nt)
+	{
+		String netType="";
+		switch(nt)
+		{
+		case 0:
+			netType="noCNN";
+			break;
+		case 1:
+			netType="CNN";
+			break;
+		case 2:
+			netType="CNNnoCNN";
+			break;
+		}
+		return netType;
+	}
 
+	
+	
 	public static void main(String[] args) throws Exception{
 		String sourceBase="F:\\ExpData\\DataIntegate\\source\\nne\\publicinfo4\\zps-400-expset\\FTnum3_-1\\";
 		String destBase=FileTool.forwardReplaceDirNode(sourceBase, "source", "dest");
-		destBase=destBase+"CNNME\\";
+		destBase=destBase+"Test/";
 
 		List<List<ViewInfo>> expViewInfos=new ArrayList<List<ViewInfo>>();
 
@@ -607,34 +673,32 @@ public class Mynnme_1linear_auto {
 		//		expViewInfos.add(viewsF);
 
 		//		List<ViewInfo> viewsG=new ArrayList<ViewInfo>();
-		//		addExpView(sourceBase,"id_avgT",viewsG);
+		//		addExpView(sourceBase,"weibo(10x20)",0,viewsG);
+		//		addExpView(sourceBase,"tag",0,viewsG);
+		//		addExpView(sourceBase,"id_w2v_sort_cluster(step10)",0,viewsG);
 		//		expViewInfos.add(viewsG);
 		//
 		//		List<ViewInfo> viewsH=new ArrayList<ViewInfo>();
-		//		addExpView(sourceBase,"tag",viewsH);
-		//		addExpView(sourceBase,"id_w2v_cluster(step10)",viewsH);
+		//		addExpView(sourceBase,"weibo(10x20)",1,viewsH);
+		//		addExpView(sourceBase,"tag",0,viewsH);
+		//		addExpView(sourceBase,"id_w2v_sort_cluster(step10)",0,viewsH);
 		//		expViewInfos.add(viewsH);
+		//
+		
+//				List<ViewInfo> viewsI=new ArrayList<ViewInfo>();
+//				addExpView(sourceBase,"tag_sort(oldVec)",0,viewsI);
+//				expViewInfos.add(viewsI);
 
-		List<ViewInfo> viewsH=new ArrayList<ViewInfo>();
-		addExpView(sourceBase,"id_w2v_sort_cluster(step10)",2,viewsH);
-		addExpView(sourceBase,"weibo(10x20)",2,viewsH);
-		expViewInfos.add(viewsH);
-
-		List<ViewInfo> viewsI=new ArrayList<ViewInfo>();
-		addExpView(sourceBase,"id_w2v_sort_cluster(step10)",2,viewsI);
-		addExpView(sourceBase,"tag",2,viewsI);
-		expViewInfos.add(viewsI);
-
-		List<ViewInfo> viewsJ=new ArrayList<ViewInfo>();
-		addExpView(sourceBase,"id_w2v_sort_cluster(step10)",2,viewsJ);
-		expViewInfos.add(viewsJ);
+		//		List<ViewInfo> viewsJ=new ArrayList<ViewInfo>();
+		//		addExpView(sourceBase,"tag(negative)",0,viewsJ);
+		//		expViewInfos.add(viewsJ);
 
 		//		List<ViewInfo> viewsK=new ArrayList<ViewInfo>();
 		//		addExpView(sourceBase,"weibo(10x20)(Wm.xId_w2v)",viewsK);
 		//		expViewInfos.add(viewsK);
 
 		int roundNum=100;
-		int totalFold=5;
+		int totalFold=2;
 		for(List<ViewInfo> viewInfos:expViewInfos){
 			expRun(sourceBase,destBase,viewInfos,roundNum,totalFold);
 		}

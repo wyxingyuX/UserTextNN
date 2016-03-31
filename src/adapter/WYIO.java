@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import other.Data;
+import wyConnect.PredictData;
+import wyConnect.PredictResult;
 
 public class WYIO {
 	public static void write(List<String> lists,String dest) throws UnsupportedEncodingException, FileNotFoundException{
@@ -49,7 +51,7 @@ public class WYIO {
 			String[] elms=idsLine.split(idsSeperater);
 			idsMap.put(elms[0].trim(), elms[0].trim());
 		}
-		
+
 		String allWordsLine="";
 		while((allWordsLine=allWordsReader.readLine())!=null){
 			String [] elms=allWordsLine.split(allWordsSeperater);
@@ -83,6 +85,51 @@ public class WYIO {
 	public static int readVecDiem(String wordVecFile,String seperater) throws IOException
 	{
 		return readVecDiem(wordVecFile,seperater,2);
-	
- 	}
+
+	}
+	public static void writePredictResult(String dir,PredictResult pr,String valType) throws UnsupportedEncodingException, FileNotFoundException
+	{
+		PrintWriter idWriter=FileTool.getPrintWriterForFile(dir+"testing_id_"+valType+".txt");
+		PrintWriter resultWriter=FileTool.getPrintWriterForFile(dir+"result_x_"+valType+".txt");
+		//PrintWriter outputWriter=FileTool.getPrintWriterForFile(dir+"cnn_"+valType+"_feature.txt");
+
+
+		List<PredictData> pdatas=pr.predictDatas;
+		for(PredictData pd:pdatas)
+		{
+			idWriter.write(pd.data.userStr+"\t"+pd.data.goldRating+"\r\n");
+
+			resultWriter.write(pd.getpCate()+"");
+			for(double p:pd.getCateProbls())
+			{
+				resultWriter.write(" "+p);
+			}
+			resultWriter.write("\r\n");
+
+//			outputWriter.write(pd.data.userStr);
+//			for(int i=0;i<pd.getCnnOutput().length;++i)
+//			{
+//				outputWriter.write("\t"+(i+1)+":"+pd.getCnnOutput()[i]);
+//			}
+//			outputWriter.write("\r\n");
+		}
+		idWriter.close();
+		resultWriter.close();
+		//outputWriter.close();
+	}
+	public static void writeCNNFeature(String dir,List<PredictData> pdatas,String valType,String destFeatureName,boolean isAppend) throws UnsupportedEncodingException, FileNotFoundException
+	{
+		PrintWriter outputWriter=FileTool.getPrintWriterForFile(dir+valType+"_"+destFeatureName,isAppend);
+		for(PredictData pd:pdatas)
+		{
+        	outputWriter.write(pd.data.userStr);
+			for(int i=0;i<pd.getCnnOutput().length;++i)
+			{
+				outputWriter.write("\t"+(i+1)+":"+pd.getCnnOutput()[i]);
+			}
+			outputWriter.write("\r\n");
+		}
+		outputWriter.close();
+	}
+
 }

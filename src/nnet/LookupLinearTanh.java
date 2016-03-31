@@ -133,6 +133,8 @@ public class LookupLinearTanh implements NNInterface{
 	@Override
 	public void randomize(Random r, double min, double max) {
 		linear.randomize(r, min, max);
+		
+		//lookup.randomize(r, min, max); //wy 
 	}
 	
 	@Override

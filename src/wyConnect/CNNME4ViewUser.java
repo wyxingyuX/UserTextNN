@@ -33,10 +33,11 @@ public class CNNME4ViewUser extends Net4ViewUser{
 
 	////////////////
 	public View view;
-
+	
+	
 	public CNNME4ViewUser(View view,List<Integer> windowSizeLookupList,int outputLengthWordLookup) throws Exception{
 		this(view,view.embeddingFileWord,view.embeddingLengthWord,windowSizeLookupList,outputLengthWordLookup,view.trainIds,view.validationIds,view.testIds,view.allDatas);
-		
+	
 	}
 	public CNNME4ViewUser(
 			String embeddingFileWord,
